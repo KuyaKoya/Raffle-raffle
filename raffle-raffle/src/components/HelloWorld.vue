@@ -1,122 +1,115 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br />
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener"
-        >vue-cli documentation</a
-      >.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel"
-          target="_blank"
-          rel="noopener"
-          >babel</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-router"
-          target="_blank"
-          rel="noopener"
-          >router</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-eslint"
-          target="_blank"
-          rel="noopener"
-          >eslint</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-typescript"
-          target="_blank"
-          rel="noopener"
-          >typescript</a
-        >
-      </li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li>
-        <a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a>
-      </li>
-      <li>
-        <a href="https://forum.vuejs.org" target="_blank" rel="noopener"
-          >Forum</a
-        >
-      </li>
-      <li>
-        <a href="https://chat.vuejs.org" target="_blank" rel="noopener"
-          >Community Chat</a
-        >
-      </li>
-      <li>
-        <a href="https://twitter.com/vuejs" target="_blank" rel="noopener"
-          >Twitter</a
-        >
-      </li>
-      <li>
-        <a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a>
-      </li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li>
-        <a href="https://router.vuejs.org" target="_blank" rel="noopener"
-          >vue-router</a
-        >
-      </li>
-      <li>
-        <a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a>
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/vue-devtools#vue-devtools"
-          target="_blank"
-          rel="noopener"
-          >vue-devtools</a
-        >
-      </li>
-      <li>
-        <a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener"
-          >vue-loader</a
-        >
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/awesome-vue"
-          target="_blank"
-          rel="noopener"
-          >awesome-vue</a
-        >
-      </li>
-    </ul>
+  <div id="app">
+    <h1>Raffle System</h1>
+
+    <!-- Participant input -->
+    <div>
+      <label for="participantName">Participant Name:</label>
+      <input v-model="newParticipant" type="text" id="participantName" />
+      <button @click="addParticipant">Add Participant</button>
+    </div>
+
+    <!-- Prize input -->
+    <div>
+      <label for="prizeName">Prize Name:</label>
+      <input v-model="newPrize.name" type="text" id="prizeName" />
+      <label for="prizeType">Prize Type:</label>
+      <select v-model="newPrize.type" id="prizeType">
+        <option value="major">Major</option>
+        <option value="minor">Minor</option>
+      </select>
+      <button @click="addPrize">Add Prize</button>
+    </div>
+
+    <!-- Configuration -->
+    <div>
+      <label for="randomness">Randomness (1-100):</label>
+      <input
+        v-model.number="randomness"
+        type="number"
+        id="randomness"
+        min="1"
+        max="100"
+      />
+    </div>
+
+    <!-- Run Raffle -->
+    <div>
+      <button @click="runRaffle">Run Raffle</button>
+    </div>
+
+    <!-- Display Winner -->
+    <div v-if="winner">
+      <h2>Winner: {{ winner.name }}</h2>
+      <h3>Prize: {{ winner.name }} ({{ winner.prizeWon }})</h3>
+    </div>
   </div>
 </template>
 
-<script lang="ts">
-import { Options, Vue } from "vue-class-component";
+<script setup lang="ts">
+import { ref } from "vue";
 
-@Options({
-  props: {
-    msg: String,
-  },
-})
-export default class HelloWorld extends Vue {
-  msg!: string;
+const participants = ref<string[]>([]);
+const newParticipant = ref("");
+const prizes = ref<{ name: string; type: string }[]>([]);
+const newPrize = ref({ name: "", type: "major" });
+const winner = ref<{ name: string; prizeWon: string }>({
+  name: "",
+  prizeWon: "",
+});
+const randomness = ref(50);
+
+function addParticipant() {
+  if (newParticipant.value.trim() !== "") {
+    participants.value.push(newParticipant.value);
+    newParticipant.value = "";
+  }
+}
+function addPrize() {
+  if (newPrize.value.name.trim() !== "") {
+    prizes.value.push({ name: newPrize.value.name, type: newPrize.value.type });
+    newPrize.value = { name: "", type: "major" };
+  }
+}
+function runRaffle() {
+  if (participants.value.length === 0 || prizes.value.length === 0) {
+    alert("Add participants and prizes before running the raffle.");
+    return;
+  }
+
+  const randomValue = Math.random() * 100;
+  const isMajor = randomValue <= randomness.value;
+
+  const eligiblePrizes = prizes.value.filter(
+    (prize) => prize.type === (isMajor ? "major" : "minor")
+  );
+
+  if (eligiblePrizes.length === 0) {
+    alert("No eligible prizes for the selected randomness.");
+    return;
+  }
+
+  const randomParticipantIndex = Math.floor(
+    Math.random() * participants.value.length
+  );
+  const randomPrizeIndex = Math.floor(Math.random() * eligiblePrizes.length);
+
+  const tempWinner = participants.value[randomParticipantIndex];
+  const prizeWon = eligiblePrizes[randomPrizeIndex];
+
+  // Remove winner and prize from the list
+  participants.value.splice(randomParticipantIndex, 1);
+  prizes.value = prizes.value.filter((prize) => prize !== prizeWon);
+
+  // Display winner
+  winner.value = { name: tempWinner, prizeWon: prizeWon.name };
+
+  // You can add animations here if needed
 }
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
+<style scoped>
 h3 {
   margin: 40px 0 0;
 }
